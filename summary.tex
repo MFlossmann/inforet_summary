@@ -5,6 +5,10 @@
 % \usepackage{lmodern}
 \usepackage{anyfontsize}
 \usepackage{listings}
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 \usepackage{color}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
@@ -44,7 +48,7 @@
 ids of documents containing them.
 
 $\Rightarrow$ Inverted Lists:
-\begin{table}[!htbp]
+\begin{table}[!htbp]n
   \centering
   \caption{Example of inverted lists}
   \label{tab:inverted_list}
@@ -64,9 +68,151 @@ time]{code/intersect.py}
 \end{enumerate}
 Possible Optimizations:
 \begin{itemize}
-\item Order the lists s.t. $|L_1|\le|L_2|\le|L_3|\le...\le|L_k|$_
+\item Order the lists s.t. $|L_1|\le|L_2|\le|L_3|\le...\le|L_k|$
 \end{itemize}
 
+\section{Ranking}
+Ways to rank the relevance of the found entries with respect to the query.
+\begin{itemize}
+\item In the inverted lists, each doc id also has a \emph{score}
+  \begin{table}[!htbp]
+    \centering
+    \caption{Scoring}
+    \label{tab:scored_list}
+    \begin{tabular}{ll}
+      astronauts& 13:0.2, 57:0.5, 64:0.3, 77:0.25, 104:0.1, ... \\
+      moon & 5:0.3, 23:0.6, 57:0.8, 63:0.2, 104:0.1, 257:0.9, ...
+    \end{tabular}
+  \end{table}
+\item When merging, aggregate the scores and then sort.
+\item Doc ID and score (or more info): \emph{posting}
+\item Sorting only the top-$k$ hits takes $\Theta(n)$ time for constant $k$.
+  (with heapsort)
+\end{itemize}
+
+\subsection{Scoring algorithms}
+\label{sec:scoring_algorithms}
+\begin{itemize}
+\item \emph{Term frequency} (tf): Number of times a word occurs in a document
+  \begin{itemize}
+  \item Problem: Words like of, a, and, the,...
+  \item Just ignore these
+  \end{itemize}
+\item \emph{Inverse document frequency} (idf):
+  \begin{equation}
+    \mathrm{idf}=\log_2\frac{N}{\mathrm{df}}
+  \end{equation}
+  $N$: Total number of documents, $\mathrm{df}$: Document frequency (number of
+  documents containing a particular word)
+\item Combining tf and idf: good way to decrease the influence of “of”, “the”,
+  “and”, ...
+
+  Problems with tf.idf:
+  \begin{itemize}
+  \item \textbf{Problem 1:} Longer documents are automatically weighted higher.
+  \item \textbf{Problem 2:} Double tf doesn't mean it's doubly “about“ the query.
+  \end{itemize}
+\item \emph{BM25}
+  \begin{equation}
+    \mathrm{BM25}=\mathrm{tf}^*\cdot \log_2\frac{N}{\mathrm{df}}
+  \end{equation}
+  \begin{equation}
+    \mathrm{tf}^*=\mathrm{tf}\cdot \frac{(k+1)}{k\cdot(1-b + b \cdot \frac{\mathrm{DL}}{\mathrm{AVDL}})}
+  \end{equation}
+  DL: Document length, AVDL: average document length. $k,b$: Magic numbers (good
+  setting: $k=1.75, b=0.75$)
+  \begin{itemize}
+  \item Normal tf.idf: $k=\infty, b=0$
+  \end{itemize}
+\end{itemize}
+
+\subsection{Evaluation}
+\subsubsection{Precision}
+\begin{itemize}
+\item Precision (\emph{P@k}): Percentage of relevant documents among the top $k$
+  \begin{itemize}
+  \item Example:\\
+    \begin{tabular}{ll}
+      Query:& matrix movies \\
+      Relevant:& 10, 582, 877, 10003 \\
+      Result list:& 582(\cmark), 17(\xmark), 5777(\xmark), 10003(\cmark), 10(\cmark), 37(\xmark),...\\
+      \emph{P@1}:&100\% \\
+      \emph{P@2}:&50\% \\
+      \emph{P@3}:&33\% \\
+      \emph{P@4}:&50\% \\
+      \emph{P@5}:&60\% \\
+    \end{tabular}
+  \end{itemize}
+\item \emph{P@R}: \emph{P@k}, where $k=$amount of relevant documents
+\item \emph{Average Precision} (AP)
+  \begin{itemize}
+  \item $R_1,R_2,...,R_k$: Sorted list of positions of the relevant documents in
+    the result list. \\
+    \begin{tabular}{ll}
+      Query:& matrix movies \\
+      Relevant:& 10, 582, 877, 10003 \\
+      Result list:& 582(\cmark), 17(\xmark), 5777(\xmark), 10003(\cmark), 10(\cmark), 37(\xmark),...,877(\cmark) \\
+      $R_1,...,R_4$:& 1,4,5,40 \\
+      $P@R_1$,...,$P@R_4$:& 100\%, 50\%, 60\%, 10\% \\
+      AP:& (100\% + 50\%, 60\%, 10\%)/4 = 55\%
+    \end{tabular}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Mean precisions}
+Measure quality of a system by taking the mean of a given measure over all
+queries:
+\begin{itemize}
+\item \emph{MP@k}: mean of the P@k values over all queries
+\item \emph{MP@R}: mean of the P@R values over all queries
+\item \emph{MAP}: mean of the AP values over all queries
+\end{itemize}
+
+\subsubsection{Discounted cumulative gain (DCG, nDCG)}
+Relevance not binary (i.e.: 0: not relevant, 1: somewhat relevant, 2: very
+relevant)
+\begin{itemize}
+\item \emph{Cumulative gain:} \[CG@k=\sum_{i=1,...,k} \mathrm{rel}_i\]
+\item \emph{Discounted CG:} \[DCG@k = \mathrm{rel}_i +
+  \sum_{i=2,...,k}\frac{\mathrm{rel}_i}{\log_2 i}\]
+\item Normalize by maximally achievable value:
+\item \emph{Ideal DCG}: \[iDCG@k=DCG@k\ \mathrm{of\ ideal\ ranking}\]
+\item \emph{Normalized DCG}: \[nDCG@k = \frac{DCG@k}{iDCG@k}\]
+\end{itemize}
+
+\subsubsection{Binary preference (bpref)}
+If you have way more unjudged documents than judged ones
+\[\mathrm{bpref}=\frac{1}{|R|}\cdot\sum_{r\in RR}\frac{1-|NR(r)|}{\min(|R|,|N|)}\]
+\begin{itemize}
+\item $R$: Set of all judged relevant docs
+\item $N$: Set of all judged not relevant docs
+\item $RR:$ Docs in $R$ and in result list
+\item $NR(r\in RR):$ docs from the $|R|$ top-ranked from $N$ ranked before $r$
+\item Example: Result list with 7 judged documents overall\\ 
+    \begin{tabular}{ll|}
+      \#1&judged relevant\\
+      \#2&not judged\\
+      \#3&not judged\\
+      \#4&judged not relevant\\
+      \#5&judged relevant\\
+    \end{tabular}
+    Not in result list:
+    \begin{tabular}{l}
+      $A$, judged relevant \\
+      $X, Y, Z$, judged not relevant
+    \end{tabular}
+    \begin{itemize}
+    \item $R=\{\#1, \#5, A\} $
+    \item $N=\{\#4, X, Y, Z\}$
+    \item $RR=\{\#1,\#5\}$
+    \item $NR(\#1)= \{\}, |NR(\#1)|=0$
+    \item $NR(\#5)= \{\#4\}, |NR(\#5)|=1$
+\[\Rightarrow\mathrm{bpref} = \frac{1}{3}\left( \left( 1-\frac{0}{3} \right) +
+        \left( 1-\frac{1}{3} \right) \right) = \frac{5}{9}\]
+    \end{itemize}
+\end{itemize}
+
+\section{Efficient List Intersection}
 
 \end{document}
 
