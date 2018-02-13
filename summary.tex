@@ -12,6 +12,7 @@
 \usepackage{color}
 \usepackage{xcolor}
 \usepackage{svg}
+\usepackage{graphicx}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -395,6 +396,51 @@ A code is optimal for distribution $p_i$ if:
   \label{fig:huffman_tree}
 \end{figure}
 
+\section{Fuzzy Search}
+\label{sec:fuzzy_search}
+
+\subsection{Edit distance}
+\label{sec:edit_distance}
+If the characters aren't equal, take the minimum of left, up and
+left-up-diagonal + 1. If the characters are equal, take the diagonal and don't
+add 1.
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[height=60mm]{figures/edit_distance}
+  \caption{Edit distance table}
+  \label{fig:edit_distance}
+\end{figure}
+
+\subsection{Prefix edit distance (PED)}
+\label{sec:prefix_edit_distance}
+\[\mathrm{PED}(x,y)=\min \mathrm{ED}(x,y'),\ \mathrm{where\ }y'\mathrm{\ is\ a\ prefix\ of\ }y\]
+\begin{itemize}
+\item Example:
+  \[\mathrm{PED}(\mathrm{uni}, \mathrm{\blu{uni}versity}) = 0\ (\mathrm{ED}=7)\]
+  \[\mathrm{PED}(\mathrm{uniwer}, \mathrm{\blu{univer}sity}) = 1\ (\mathrm{ED}=5)\]
+\item Computation:
+  \begin{itemize}
+  \item create $|x|\cdot|y|$-table
+  \item PED is the minimum of the entries in the last row
+  \item when $|x|<<|y|$ and only $\mathrm{PED}(x,y)\le\delta$ is important, then
+    only compute the first $|x|+\delta+1$ columns
+  \end{itemize}
+
+\end{itemize}
+
+\subsection{q-Gram Index}
+\label{sec:q_gram_index}
+\begin{itemize}
+\item $q$-gram: all substrings of length $q$
+\item number of $q$-grams: $|x|-q+1$
+\item size with padding: $|x|+q-1$
+\item $q$-gram index: inverted list of the strings (from the input set), sorted
+  lexicographically.
+\item Space consumption: Each record contributes $|x|+Q$ ids to the inverted
+  lists. ($Q$ the total number of padding characters)
+\end{itemize}
+
+
 \section{Useful stuff}
 
 \subsection{Lagrange optimization}
@@ -404,7 +450,7 @@ Set
 \[\frac{\mathrm{d}}{\mathrm{d}x}\mathcal{L}=0\] and
 \[\frac{\mathrm{d}}{\mathrm{d}\lambda}\mathcal{L}=0\]
 
-% Stuff to print out:
+% Stuff to print:
 % - Solution to sheet 4
 
 \end{document}
