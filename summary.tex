@@ -474,6 +474,55 @@ add 1.
   \end{equation}
 \end{itemize}
 
+% \section{Web applications}
+% TODO: Lecture 6, 7 (ausdrucken?)
+
+\section{Vector-Space Model}
+\label{sec:vector_space_model}
+\begin{itemize}
+\item The big idea: Just represent the inverted index as a term-document matrix
+  (words are called terms now):
+  \begin{table}[h!tbp]
+    \centering
+    \begin{tabular}{lcccccc}
+      &$D_1$&$D_2$&$D_3$&$D_4$&$D_5$&$D_6$ \\
+      internet & 1 & 1 & 0& 1 & 0 & 0 \\
+      web & 1 & 0 & 1 & 1 & 0 & 0\\
+      surfing & 1 & 1 & 1 & 2 & 1 & 1 \\
+      beach & 0 & 0 & 0 & 1 & 1 & 1\\
+    \end{tabular}
+    \caption{Term-Document matrix}
+    \label{tab:term_document_matrix}
+  \end{table}
+\item Queries are represented as a vector
+\item Results: ($q$: query, $A$: Term-document-matrix)
+  \begin{equation}
+    \label{eq:vsm_result}
+     r = q^\top \cdot A
+  \end{equation}
+\end{itemize}
+
+\subsection{Sparse matrices}
+\label{sec:sparse_matrices}
+\begin{itemize}
+\item Sparse matrices only store the non-zero entries.
+\item row-major: Store row index first
+\item column-major: Store col index first
+\item Note: sparse row-major representation of a document matrix is basically
+  its' \blu{inverted index}.
+  \begin{figure}[h!tbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/sparse_ii}
+    \caption{Sparse row-major representation of an inverted index}
+    \label{fig:sparse_ii}
+  \end{figure}
+\item idf can be seen as a normalization (multiply each row by a certain factor,
+  i.e. the idf)
+\end{itemize}
+
+\section{Clustering/K-means}
+\label{sec:clustering_k_means}
+
 
 \section{Useful stuff}
 
