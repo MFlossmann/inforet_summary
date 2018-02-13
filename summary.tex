@@ -406,7 +406,9 @@ left-up-diagonal + 1. If the characters are equal, take the diagonal and don't
 add 1.
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[height=60mm]{figures/edit_distance}
+  % \includegraphics[height=60mm]{figures/edit_distance}
+  % TODO: add the edit distance figure
+  foo
   \caption{Edit distance table}
   \label{fig:edit_distance}
 \end{figure}
@@ -437,7 +439,39 @@ add 1.
 \item $q$-gram index: inverted list of the strings (from the input set), sorted
   lexicographically.
 \item Space consumption: Each record contributes $|x|+Q$ ids to the inverted
-  lists. ($Q$ the total number of padding characters)
+  lists. $Q$ is the total number of padding characters (for one-sided padding:
+  $Q=2$)
+\end{itemize}
+\subsection{Fuzzy search algorithm}
+\label{sec:fuzzy_search_algorithm}
+\begin{itemize}
+\item Let's say, we only look at $x$ and $y$ with $ED(x,y)=\delta$
+\item With $x'$ and $y'$ being padded versions of $x$ and $y$, the amount of
+  $q$-grams they have in common is:
+  \begin{equation}
+  \mathrm{comm}(x',y')\le \max(|x|,|y|)-1-(\delta - 1)\cdot q\label{eq:least_common_qgram}
+\end{equation}
+
+\item Processing a query
+  \begin{enumerate}
+  \item Pad $x$
+  \item compute the $q$-grams of $x$
+  \item fetch and merge all ids of every $q$-gram, counting how often each id
+    shows up in the merge
+  \item for each entry, you compute the amount minimum in common number
+    \begin{enumerate}
+    \item If it's too low, according to (\ref{eq:least_common_qgram}), discard
+      it.
+    \item If not: Compute the edit-distance
+    \end{enumerate}
+    \lstinputlisting[caption=Processing a query]{code/fuzzy_search.py}
+  \end{enumerate}
+\item Changes when using the Prefix-edit-Distance (PED): The least common amount
+  (\ref{eq:least_common_qgram}) reduces to:
+  \begin{equation}
+    \label{eq:least_common_ped}
+    \mathrm{comm}(x',y')\ge |x|-q\cdot \delta
+  \end{equation}
 \end{itemize}
 
 
