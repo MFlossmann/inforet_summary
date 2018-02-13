@@ -10,10 +10,15 @@
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
 \usepackage{color}
+\usepackage{xcolor}
+\usepackage{svg}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
 \definecolor{mymauve}{rgb}{0.58,0,0.82}
+\definecolor{mainblue}{HTML}{2F88BD}%{009EFC}
+\newcommand{\blu}[1]{\textcolor{mainblue}{#1}}
+
 \lstset{ %
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
   basicstyle=\footnotesize,        % the size of the fonts that are used for the code
@@ -212,7 +217,195 @@ If you have way more unjudged documents than judged ones
     \end{itemize}
 \end{itemize}
 
-\section{Efficient List Intersection}
+\section{Efficiency tuning}
+
+\subsection{Non-algorithmic improvements}
+\begin{itemize}
+\item Instead of lists: Native arrays
+\item Increase predictability by reducing conditional parts of code
+  \begin{itemize}
+  \item Pipelining: Improve predictability by evaluate to the same boolean value
+    most of the time.
+  \item Sentinels: Special elements to avoid testing for index out of bound
+  \end{itemize}
+\end{itemize}
+
+\subsection{Algorithmic improvements}
+\begin{itemize}
+\item Binary search in the longer list (Complexity $\Theta(k\cdot \log n)$)\\
+  Good for small $k$, but for $k=\Theta(n)$, this is $\Theta(n\log
+  n)\Rightarrow$ slower than zipper.
+\item Binary search in remainder of longer list
+  \begin{itemize}
+  \item Time complexity in the best case: $\Theta(k+\log n)$ (First element from
+    A towards the end of list B)
+  \item Time complexity in the worst case: $\Theta(k\cdot \log n)$ (All elements
+    of A at the beginning of list B)
+  \item Typical time complexity: $\Theta(k\cdot \log n)$ (Elements of A evenly
+    distributed over list B)
+  \end{itemize}
+\item Galloping search: Exponential search to get an upper bound, then binary
+  search
+  \[\mathcal{O}\left(k\cdot \log\left(1+\frac{n}{k}\right)\right)\]
+  Note: Always $\mathcal{O}(n)\Rightarrow$ at least as good as Zipper!
+  (\emph{asymptotically optimal})
+\item Skip pointers: heuristically skip elements of the longer list.
+\end{itemize}
+
+\section{Compression}
+Gap encoding: Store differences from one item to the next (of a sorted list)
+
+\subsection{Elias-Gamma}
+
+\begin{itemize}
+\item Write $ \left\lfloor
+    \log_2 x
+  \right\rfloor$ zeros, then $x$ in binary
+\item Prefix-free
+\item Length for $x$: $2\cdot\lfloor \log_2 x \rfloor + 1$ bits
+\end{itemize}
+\begin{table}[!htbp]
+  \centering
+  \begin{tabular}{ll}
+    1&1\\
+    2&010\\
+    3&011\\
+    4&00100\\
+    \multicolumn{2}{c}{...}\\
+    10&0001010
+  \end{tabular}
+  \caption{Elias-Gamma}
+  \label{tab:elias_gamma}
+\end{table}
+\subsection{Elias-Delta}
+\begin{itemize}
+\item Write $\lfloor {\log_2 x} \rfloor \blu{+ 1}$ in Elias-Gamma, followed by $x$ in
+  binary, but \textcolor{mainblue}{\textbf{without the leading 1!}}
+\item Prefix-free
+\item Lenght for $x$: $\lfloor {\log_2 x} + 2\log_2\log_2 x + \mathcal{O}(1) \rfloor$
+\end{itemize}
+\begin{table}[!htbp]
+  \centering
+  \begin{tabular}{ll}
+    1&1\\
+    2&010\blu{0}\\
+    3&010\blu{1}\\
+    4&011\blu{00}\\
+    5&011\blu{01}\\
+    6&011\blu{10}\\
+    \multicolumn{2}{c}{...}\\
+    10&00100\blu{010}
+  \end{tabular}
+  \caption{Elias-Delta}
+  \label{tab:elias_delta}
+\end{table}
+\subsection{Golomb}
+\label{sec:golomb}
+\begin{itemize}
+\item Code-length:
+  \[L_x = \left\lfloor \frac{x}{M} \right\rfloor + 1 +
+  \left\lceil \log_2 M \right\rceil\]
+\item Comes with an integer parameter $M$ (``modulus'')
+\item Write $x$ as $q\cdot M + r$
+  \begin{itemize}
+  \item $q = x \div M$
+  \item $r = x\ \mathrm{mod}\ M$
+  \end{itemize}
+\item Code for $x$:
+  \begin{itemize}
+  \item $q$ written in unary with 0s ($\left\lfloor {\frac{x}{M}} \right\rfloor$
+    bits)
+  \item single 1 as delimiter (1 bit)
+  \item $r$ written in binary ($\left\lceil {\log_2 M} \right\rceil$ bits)
+  \end{itemize}
+\item Example:
+  \[M=16, x=42\]
+  \[q = 42\div 16 = 2 = 00\ \mathrm{(in\ unary)}\]
+  \[r = 42\ \mathrm{mod}\ 16 = 10 = 1010\ \mathrm{(in\ binary)}\]
+  \[\Rightarrow \mathrm{Golomb\ code:}\ 0011010\]
+\end{itemize}
+\subsection{Variable-Byte}
+\label{sec:variable_byte}
+
+\begin{itemize}
+\item Gets rid of the bit fiddling
+\end{itemize}
+
+\subsubsection{Example: UTF-8}
+\label{sec:utf-8}
+\begin{itemize}
+\item Start a number with the total amount of bytes the whole number needs
+  written in unary 1's
+\item Insert a delimiter 0 and write the number you want
+\item For every continuation byte, start it with a 10-prefix
+\end{itemize}
+
+\section{Entropy}
+\label{sec:entropy}
+Definition of entropy of a discrete random variable $X$
+\[H(X) = -\sum_i p_i \log_2 p_i\]
+
+\subsection{Entropy-optimal codes}
+\label{sec:entropy_optimal_codes}
+A code is optimal for distribution $p_i$ if:
+\[L_i\le 1 - \log_2 p_i\]
+\subsection{Shannon's source coding theorem}
+\label{sec:shannon_theorem}
+
+\begin{itemize}
+\item Let $X$ be a random variable with \blu{finite range}
+\item For an arbitrary prefix-free (PF) encoding, let $L_i$ be the length of the
+  code for $i \in \mathrm{range}(X)$
+\item[$\Rightarrow$] For any PF encoding it holds: $\mathbb{E}\{L_X\}\ge H(X)$
+\item[$\Rightarrow$] There is a PF encoding with: $\mathbb{E}\{L_X\}\le H(X) + 1$
+\item In words:\\
+  \blu{No code can be better than the entropy and there is always a code that's
+    (almost) as good!}
+\item Kraft inequality ($L_i$ is the length of a code):
+\[\sum_{i\in X}^X 2^{-L_i}\le 1\]
+\end{itemize}
+
+\subsection{Huffman coding}
+\label{sec:huffman_coding}
+\begin{itemize}
+\item Has $2^{\max L_i}$ leaves.
+\item Encoding:
+  \begin{itemize}
+  \item Sort symbols to encode by frequency
+  \item Start with least frequent symbols, and write their frequency next to
+    them.
+  \item Bundle words with the same frequency together and connect them with a
+    node containing their combined frequencies.
+  \item This combined frequency gets bundled with symbols with the same
+    frequency as the combined one.
+  \item Continue until you reach a root node.
+  \item Denote right edges with 1, left with 0.
+  \end{itemize}
+\item Decoding:
+  \begin{itemize}
+  \item Start at the root node
+  \item For every 1 go right, for every 0 go left...
+  \item ... until you hit a symbol
+  \end{itemize}
+\end{itemize}
+\begin{figure}[!htbp]
+  \centering
+  \includesvg[width=0.8\textwidth]{figures/huffman_tree}
+  \caption{Huffman tree}
+  \label{fig:huffman_tree}
+\end{figure}
+
+\section{Useful stuff}
+
+\subsection{Lagrange optimization}
+Function to minimize $f(x)$, constraints $g(x)\ge 0$. Lagrange function:
+\[\mathcal{L}(x,\lambda)=f(x)-\lambda g(x)\]
+Set
+\[\frac{\mathrm{d}}{\mathrm{d}x}\mathcal{L}=0\] and
+\[\frac{\mathrm{d}}{\mathrm{d}\lambda}\mathcal{L}=0\]
+
+% Stuff to print out:
+% - Solution to sheet 4
 
 \end{document}
 
