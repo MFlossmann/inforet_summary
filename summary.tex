@@ -13,6 +13,10 @@
 \usepackage{xcolor}
 \usepackage{svg}
 \usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -21,7 +25,7 @@
 \newcommand{\blu}[1]{\textcolor{mainblue}{#1}}
 
 \lstset{ %
-  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as la<st argument
   basicstyle=\footnotesize,        % the size of the fonts that are used for the code
   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
   breaklines=true,                 % sets automatic line breaking
@@ -406,9 +410,7 @@ left-up-diagonal + 1. If the characters are equal, take the diagonal and don't
 add 1.
 \begin{figure}[!htbp]
   \centering
-  % \includegraphics[height=60mm]{figures/edit_distance}
-  % TODO: add the edit distance figure
-  foo
+  \includegraphics[height=60mm]{figures/edit_distance}
   \caption{Edit distance table}
   \label{fig:edit_distance}
 \end{figure}
@@ -523,6 +525,87 @@ add 1.
 % \section{Clustering/K-means}
 % \label{sec:clustering_k_means}
 % TODO: print out lecture 9?
+
+\section{Latent Semantic Indexing}
+\begin{itemize}
+\item Problem: Incorporate synonyms and polysems into our query
+\item Goal: Automatically add missing synonyms to documents (see: fig. \ref{fig:lti_principle})
+  \begin{figure*}[h!tbp]
+    \centering
+    \subfloat[][Before LTI]{\includegraphics[width=0.4\textwidth]{figures/lti_example1}}
+    \subfloat[][After LTI]{\includegraphics[width=0.4\textwidth]{figures/lti_example2}\label{fig:lti_example2}}
+    \caption{LTI principle}
+    \label{fig:lti_principle}
+  \end{figure*}
+\item The matrix in subfig. \ref{fig:lti_example2} has \blu{column rank 2}. i.e.
+  we can write each colum as a (different) linear compination of the same two
+  base colums:
+  \[B_1=
+    \left(
+      \begin{array}{c}
+        1 \\ 1\\ 1 \\ 0
+      \end{array}
+    \right), B_2 = \left(
+      \begin{array}{c}
+        0 \\0 \\1  \\ 1
+      \end{array}
+  \right)
+\]
+\item Equivalently: the $4\times 6$ term-document matrix can be written as a
+  product of a $4\times 2$ matrix and a $2\times6$ matrix:
+  \begin{equation}
+    \label{eq:lti_concept}
+    \left(
+      \begin{array}{cccccc}
+        1&1&1&1&0&0 \\
+        1&1&1&1&0&0 \\
+        1&1&1&2&1&1 \\
+        0&0&0&1&1&1
+      \end{array}
+    \right) = 
+\underbrace{\left(
+      \begin{array}{cc}
+        1&0\\
+        1&0\\
+        1&1\\
+        0&1\\
+      \end{array}
+    \right)}_{\mathrm{``concepts''}}\cdot
+\underbrace{\left(
+      \begin{array}{cccccc}
+        1&1&1&1&0&0 \\
+        0&0&0&1&1&1 
+      \end{array}
+    \right)}_{\mathrm{``concept\ space''}}
+  \end{equation}
+\item $B_1, B_2$ aere the underlying \blu{\emph{concepts}}, $D'_1,...,D'_6$ is
+  the ``concept space''.
+\item Approach:
+  \begin{itemize}
+  \item Given an $\mathbb{R}^{m\times n}$ term-document matrix $A$ and $k < \mathrm{rank}(A)$
+  \item Find a matrix $A'$ of (column) rank $k$ s.t. the difference between $A'$
+    and $A$ is as small as possible:
+    \[A'=\argmin_{A'\in \mathbb{R}^{m\times n}, \mathrm{rank}(A)=k}||A-A'||\]
+    We use the Frobenius-norm:
+    \[||D||:=\sqrt{\sum_{ij}D_{ij}^2}\]
+  \end{itemize}
+\end{itemize}
+
+\subsection{Singular value decomposition (SVD)}
+\label{sec:svd}
+\begin{itemize}
+\item Any $\mathbb{R}^{m\times n}$ matrix $A$ of rank $r$, there exists $U,S,V$, s.t.:
+  \[A=USV\]
+  \begin{itemize}
+  \item $U\in \mathbb{R}^{m\times r}, U$ is orthonormal
+  \item $S \in \mathbb{R}^{r\times r}$, with only diagonal nonzeros
+  \item $V\in \mathbb{R}^{r\times n}, V$ is orthonormal
+  \end{itemize}
+\item From EVD to SVD
+  \begin{itemize}
+  \item $A\in \mathbb{R}^{m\times n}\Rightarrow A:=AA^\top \in \mathbb{R}^{m\times m}$
+  \end{itemize}
+\end{itemize}
 
 \section{Useful stuff}
 
