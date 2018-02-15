@@ -589,6 +589,14 @@ add 1.
     We use the Frobenius-norm:
     \[||D||:=\sqrt{\sum_{ij}D_{ij}^2}\]
   \end{itemize}
+\item Using the single value decomposition $A=USV$, we can get $A_k$ for a given
+  $k<\mathrm{rank}(A)$ for the LSI like this:
+  \begin{itemize}
+  \item $U_k$ are the first $k$ columns of $U$
+  \item $S_k$ is the upper $k\times k$ part of $S$
+  \item $V_k$ are the first $k$ rows of $V$
+  \item[$\Rightarrow$] $A_k=U_kS_kV_k$ is a matrix of rank $k$ that minimizes $||A-A_k||$
+  \end{itemize}
 \end{itemize}
 
 \subsection{Singular value decomposition (SVD)}
@@ -603,9 +611,36 @@ add 1.
   \end{itemize}
 \item From EVD to SVD
   \begin{itemize}
-  \item $A\in \mathbb{R}^{m\times n}\Rightarrow A:=AA^\top \in \mathbb{R}^{m\times m}$
+  \item $A\in \mathbb{R}^{m\times n}\Rightarrow A:=AA^\top \in
+    \mathbb{R}^{m\times m}$
+  \item If we assume that
+    \[\exists A=USV, U^\top U=\mathbb{I}, V^\top V=\mathbb{I}\]
+    \[\Rightarrow AA^\top = USVV^\top S^\top U^\top=US^2U^\top\]
+    \[\Rightarrow A^\top A= V^\top SU^\top USV=V^\top S^2 V\]
+  \item Thus, the \blu{columns of $U$} are the eigenvectors of $AA^\top$ and the
+    \blu{rows of $V$} are the eigenvectors of $A^\top A$.
   \end{itemize}
 \end{itemize}
+
+\subsection{Applying LSI}
+\begin{enumerate}
+\item Approach: Use $A_k$, instead of $A$
+  \begin{itemize}
+  \item Problem: $A_k$ is \blu{dense!!!}
+  \end{itemize}
+\item Approach: Use $V_k$, instead of $A$
+  \begin{itemize}
+  \item $V_k$ is dense and $\in\mathbb{R}^{k\times n}$
+  \item Note: original Matrix $A$ has $m'\cdot n$ non-zero entries ($m'$:
+    average number of words in a document)
+  \item $\Rightarrow$ storing $V_k$ instead of $A$ is ok if $k\approx m'$ or
+    smaller
+  \item Problem: Need of mapping the query to concept space:
+    \[q^\top_k := q^\top\cdot U_k\cdot S_k\]
+  \end{itemize}
+\item Approach: expand the original documents ($T_k$ basically ``defines synonyms''):
+  \[A_k=U_kU_k^\top\cdot A=T_k\cdot A\]
+\end{enumerate}
 
 \section{Useful stuff}
 
